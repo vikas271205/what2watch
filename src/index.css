@@ -11,3 +11,25 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+/* index.css */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+
+.animate-scroll-horizontal {
+  animation: scroll-horizontal 40s linear infinite;
+}
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
