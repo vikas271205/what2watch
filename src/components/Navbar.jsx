@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { Menu, X } from "lucide-react"; // Make sure lucide-react is installed
+import { Menu, X } from "lucide-react";
 
 function Navbar() {
   const [user, setUser] = useState(null);
@@ -42,6 +42,8 @@ function Navbar() {
           <Link to="/search" className="hover:underline">Search</Link>
           <Link to="/genres" className="hover:underline">Genres</Link>
           <Link to="/watchlist" className="hover:underline">Watchlist</Link>
+          <Link to="/tvshows" className="hover:underline">TV Shows</Link>
+          <Link to="/recommended" className="hover:underline">Recommended</Link>
 
           {!user ? (
             <>
@@ -68,6 +70,8 @@ function Navbar() {
           <Link to="/search" onClick={toggleMenu}>Search</Link>
           <Link to="/genres" onClick={toggleMenu}>Genres</Link>
           <Link to="/watchlist" onClick={toggleMenu}>Watchlist</Link>
+          <Link to="/tvshows" onClick={toggleMenu}>TV Shows</Link>
+          <Link to="/recommended" onClick={toggleMenu}>Recommended</Link>
 
           {!user ? (
             <>

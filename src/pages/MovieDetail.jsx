@@ -11,6 +11,7 @@ import {
   where,
   serverTimestamp,
 } from "firebase/firestore";
+import { fetchOMDbData } from "../api/omdb";
 import { db } from "../firebase";
 import { auth } from "../firebase";
 
@@ -26,6 +27,7 @@ function MovieDetail() {
   const [userRating, setUserRating] = useState(0);
   const [comment, setComment] = useState("");
   const [allComments, setAllComments] = useState([]);
+  const [omdbData, setOmdbData] = useState(null);
   const user = auth.currentUser;
 
   useEffect(() => {
@@ -35,6 +37,10 @@ function MovieDetail() {
       const res = await fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}`);
       const movieData = await res.json();
       setMovie(movieData);
+
+      // Fetch OMDb data
+      const omdb = await fetchOMDbData(movieData.title);
+      setOmdbData(omdb);
 
       const trailerRes = await fetch(`https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_API_KEY}`);
       const trailerData = await trailerRes.json();
@@ -100,7 +106,6 @@ function MovieDetail() {
 
   const submitComment = async () => {
     if (!user || !comment.trim()) return;
-
     const commentId = `${user.uid}_${Date.now()}`;
     const commentRef = doc(db, "comments", commentId);
     await setDoc(commentRef, {
@@ -137,8 +142,21 @@ function MovieDetail() {
           <div className="flex-1">
             <h1 className="text-3xl font-bold mb-2">{movie.title}</h1>
             <p className="text-gray-300 mb-1">{movie.genres?.map((g) => g.name).join(", ")}</p>
-            <p className="text-yellow-400 font-semibold mb-4">⭐ {movie.vote_average?.toFixed(1)}</p>
-            <p className="text-sm text-gray-200 mb-6">{movie.overview}</p>
+            <p className="text-yellow-400 font-semibold mb-1">⭐ TMDB: {movie.vote_average?.toFixed(1)}</p>
+
+            {omdbData && (
+              <div className="text-sm text-gray-300 mt-1 space-y-1">
+                {omdbData.imdbRating && <p>🎬 IMDb: {omdbData.imdbRating}/10</p>}
+                {omdbData.Ratings?.find(r => r.Source === "Rotten Tomatoes") && (
+                  <p>🍅 Rotten Tomatoes: {omdbData.Ratings.find(r => r.Source === "Rotten Tomatoes").Value}</p>
+                )}
+                {omdbData.Ratings?.find(r => r.Source === "Metacritic") && (
+                  <p>🎯 Metacritic: {omdbData.Ratings.find(r => r.Source === "Metacritic").Value}</p>
+                )}
+              </div>
+            )}
+
+            <p className="text-sm text-gray-200 mt-4 mb-6">{movie.overview}</p>
 
             <button
               onClick={toggleWatchlist}
