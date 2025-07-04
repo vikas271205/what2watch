@@ -44,6 +44,7 @@ function TVSection() {
               size="small"
               genres={[]}
               isTV={true}
+              language={tv.original_language}
             />
           ))}
         </div>

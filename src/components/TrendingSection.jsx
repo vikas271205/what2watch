@@ -93,6 +93,7 @@ function TrendingSection() {
                 .filter((name) => Boolean(name)) || []
             }
             size="large"
+            language={movie.original_language}
           />
         ))}
       </div>

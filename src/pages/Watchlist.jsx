@@ -9,6 +9,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import MovieCard from "../components/MovieCard";
+import { Languages } from "lucide-react";
 
 function Watchlist() {
   const [watchlist, setWatchlist] = useState([]);
@@ -37,6 +38,8 @@ function Watchlist() {
           timestamp: movie.timestamp?.toDate(),
           docId: doc.id,
           genre: movie.genre || "Unknown",
+          language: movie.language || "Unknown",
+
         };
       });
 
@@ -126,6 +129,7 @@ function Watchlist() {
                 rating={movie.rating}
                 showRemoveButton={true}
                 onRemove={() => handleRemove(movie.docId)}
+                language={movie.language}
               />
               <p className="text-xs text-gray-400 mt-1">
                 Added: {movie.timestamp?.toLocaleDateString() || "N/A"}

@@ -6,6 +6,7 @@ import {
   getDocs,
   setDoc,
   doc,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { AuthContext } from "../context/AuthContext";
@@ -13,7 +14,6 @@ import MovieCard from "../components/MovieCard";
 
 function Profile() {
   const { user } = useContext(AuthContext);
-
   const [watchlist, setWatchlist] = useState([]);
   const [ratings, setRatings] = useState([]);
 
@@ -63,6 +63,18 @@ function Profile() {
     });
   };
 
+  const removeFromWatchlist = async (movieId) => {
+    const docKey = `${user.uid}_${movieId}`;
+    await deleteDoc(doc(db, "watchlists", docKey));
+    setWatchlist((prev) => prev.filter((m) => m.movieId !== movieId));
+  };
+
+  const removeFromRatings = async (movieId) => {
+    const docKey = `${user.uid}_${movieId}`;
+    await deleteDoc(doc(db, "ratings", docKey));
+    setRatings((prev) => prev.filter((m) => m.movieId !== movieId));
+  };
+
   const ratingMap = {};
   ratings.forEach((r) => (ratingMap[r.movieId] = r.rating));
 
@@ -89,8 +101,9 @@ function Profile() {
                 id={movie.movieId}
                 title={movie.title}
                 imageUrl={movie.imageUrl}
-                rating={ratingMap[movie.movieId] || 0}
-                onRate={(val) => saveRating(movie, val)}
+                rating={ratingMap[movie.movieId] || movie.rating}
+                showRemoveButton={true}
+                onRemove={() => removeFromWatchlist(movie.movieId)}
               />
             ))}
           </div>
@@ -111,7 +124,8 @@ function Profile() {
                 title={movie.title}
                 imageUrl={movie.imageUrl}
                 rating={movie.rating}
-                onRate={(val) => saveRating(movie, val)}
+                showRemoveButton={true}
+                onRemove={() => removeFromRatings(movie.movieId)}
               />
             ))}
           </div>

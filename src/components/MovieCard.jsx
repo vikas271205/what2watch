@@ -11,6 +11,7 @@ import {
 } from "firebase/firestore";
 import { calculateUncleScore } from "../utils/uncleScore";
 import { fetchOMDbData } from "../api/omdb";
+import languageMap from "../utils/LanguageMap";
 
 function MovieCard({
   id,
@@ -21,7 +22,8 @@ function MovieCard({
   onRemove,
   genres = [],
   size = "small",
-  isTV = false, // ✅ New prop to handle TV routing
+  isTV = false,
+  language,
 }) {
   const [isSaved, setIsSaved] = useState(false);
   const [uncleScore, setUncleScore] = useState(null);
@@ -79,6 +81,7 @@ function MovieCard({
         title,
         imageUrl,
         rating,
+        language,
         timestamp: serverTimestamp(),
       });
       setIsSaved(true);
@@ -104,7 +107,11 @@ function MovieCard({
         ) : (
           <p className="text-xs text-gray-400">Loading score...</p>
         )}
-
+        {language ? (
+  <p className="text-xs text-gray-400">🌐 {languageMap[language] || language?.toUpperCase() || "Unknown"}</p>
+) : (
+  <p className="text-xs text-red-400">🌐 N/A</p>
+)}
         {genres.length > 0 && (
           <p className="text-xs text-gray-400 truncate">
             {genres.slice(0, 2).join(", ")}

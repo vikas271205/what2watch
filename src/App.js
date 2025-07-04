@@ -10,6 +10,8 @@ import Profile from "./pages/Profile";
 import TVDetail from "./pages/TVDetail";
 import TVShows from "./pages/TVShows";
 import Recommended from "./pages/Recommended";
+import Genres from "./pages/Genres";
+
 
 function App() {
   return (
@@ -17,6 +19,7 @@ function App() {
       {/* Navbar here if any */}
       <Navbar/>
       <Routes>
+        <Route path="/genres" element={<Genres />} />
         <Route path="/recommended" element={<Recommended/>}/>
         <Route path="/tvshows" element={<TVShows />} />
         <Route path="/tv/:id" element={<TVDetail />} />

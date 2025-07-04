@@ -62,6 +62,7 @@ function RecommendedSection() {
               size="small"
               genres={[]}
               isTV={false}
+              language={movie.original_language}
             />
           ))}
         </div>

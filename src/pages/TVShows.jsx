@@ -43,6 +43,7 @@ function TVShows() {
               rating={tv.vote_average}
               genres={[]}
               isTV={true}
+              language={tv.original_language}
             />
           ))}
         </div>

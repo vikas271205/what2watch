@@ -6,6 +6,7 @@ function TodaysPick() {
     imageUrl: "https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0W6Sg6KCEAXb2Q2xC.jpg",
     rating: "8.7",
     genre: "Biography, Drama, History",
+    
   };
 
   return (

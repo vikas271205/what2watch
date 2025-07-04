@@ -74,6 +74,7 @@ function Recommended() {
               rating={item.rating}
               isTV={item.isTV}
               genres={[]}
+              language={item.original_language}
             />
           ))}
         </div>
