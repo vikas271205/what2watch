@@ -35,11 +35,13 @@ function Navbar() {
         {/* desktop links */}
         <div className="hidden md:flex gap-6 items-center">
           <Link to="/"            className="hover:underline">Home</Link>
+          <Link to="/trending" className="hover:underline">Trending</Link>
           <Link to="/search"      className="hover:underline">Search</Link>
           <Link to="/genres"      className="hover:underline">Genres</Link>
           <Link to="/watchlist"   className="hover:underline">Watchlist</Link>
           <Link to="/tvshows"     className="hover:underline">TV Shows</Link>
           <Link to="/recommended" className="hover:underline">Recommended</Link>
+          
 
           {!user ? (
             <>
@@ -71,6 +73,7 @@ function Navbar() {
       {menuOpen && (
         <div className="md:hidden bg-black border-t border-gray-700 px-4 pb-4 flex flex-col gap-4">
           <Link to="/"          onClick={() => setMenuOpen(false)}>Home</Link>
+          <Link to="/trending"  onClick={() => setMenuOpen(false)}>Trending</Link>
           <Link to="/search"    onClick={() => setMenuOpen(false)}>Search</Link>
           <Link to="/genres"    onClick={() => setMenuOpen(false)}>Genres</Link>
           <Link to="/watchlist" onClick={() => setMenuOpen(false)}>Watchlist</Link>

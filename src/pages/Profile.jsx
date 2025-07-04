@@ -1,3 +1,4 @@
+// src/pages/Profile.jsx
 import { useContext, useEffect, useState } from "react";
 import {
   collection,
@@ -26,14 +27,17 @@ function Profile() {
         where("userId", "==", user.uid)
       );
       const wSnap = await getDocs(wQuery);
-      setWatchlist(wSnap.docs.map((d) => d.data()));
+      const watchlistData = wSnap.docs.map((d) => d.data());
 
       const rQuery = query(
         collection(db, "ratings"),
         where("userId", "==", user.uid)
       );
       const rSnap = await getDocs(rQuery);
-      setRatings(rSnap.docs.map((d) => d.data()));
+      const ratingData = rSnap.docs.map((d) => d.data());
+
+      setWatchlist(watchlistData);
+      setRatings(ratingData);
     };
 
     fetchData();
@@ -48,7 +52,9 @@ function Profile() {
       movieId: movie.movieId,
       title: movie.title,
       imageUrl: movie.imageUrl,
+      publicRating: movie.rating || movie.publicRating,
       rating: newRating,
+      language: movie.language,
     });
 
     setRatings((prev) => {
@@ -101,9 +107,12 @@ function Profile() {
                 id={movie.movieId}
                 title={movie.title}
                 imageUrl={movie.imageUrl}
-                rating={ratingMap[movie.movieId] || movie.rating}
+                publicRating={movie.rating}
+                userRating={ratingMap[movie.movieId]}
                 showRemoveButton={true}
+                language={movie.language}
                 onRemove={() => removeFromWatchlist(movie.movieId)}
+                onRate={(star) => saveRating(movie, star)}
               />
             ))}
           </div>
@@ -123,9 +132,13 @@ function Profile() {
                 id={movie.movieId}
                 title={movie.title}
                 imageUrl={movie.imageUrl}
-                rating={movie.rating}
+                showUncleScore={false}
+                publicRating={null}
+                userRating={movie.rating}
                 showRemoveButton={true}
+                language={movie.language}
                 onRemove={() => removeFromRatings(movie.movieId)}
+                onRate={(star) => saveRating(movie, star)}
               />
             ))}
           </div>

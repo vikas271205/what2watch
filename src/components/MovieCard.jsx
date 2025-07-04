@@ -17,13 +17,16 @@ function MovieCard({
   id,
   title,
   imageUrl,
-  rating,
+  publicRating,
+  userRating,
   showRemoveButton = false,
   onRemove,
   genres = [],
   size = "small",
   isTV = false,
   language,
+  onRate,
+  showUncleScore = true,
 }) {
   const [isSaved, setIsSaved] = useState(false);
   const [uncleScore, setUncleScore] = useState(null);
@@ -48,16 +51,14 @@ function MovieCard({
 
   useEffect(() => {
     const loadOMDbData = async () => {
-      if (!title || !rating) return;
+      if (!showUncleScore || !title || publicRating == null) return;
 
       try {
         const omdb = await fetchOMDbData(title);
-        const rtRating = omdb?.Ratings?.find(
-          (r) => r.Source === "Rotten Tomatoes"
-        )?.Value;
+        const rtRating = omdb?.Ratings?.find(r => r.Source === "Rotten Tomatoes")?.Value;
         const imdbRating = omdb?.imdbRating;
 
-        const score = calculateUncleScore(rating, imdbRating, rtRating);
+        const score = calculateUncleScore(publicRating, imdbRating, rtRating);
         setUncleScore(score);
       } catch (err) {
         console.error("OMDb fetch failed:", err);
@@ -65,11 +66,10 @@ function MovieCard({
     };
 
     loadOMDbData();
-  }, [title, rating]);
+  }, [title, publicRating, showUncleScore]);
 
-  const handleSave = async () => {
+  const toggleSave = async () => {
     if (!user) return;
-
     const ref = doc(db, "watchlists", `${user.uid}_${id}`);
     if (isSaved) {
       await deleteDoc(ref);
@@ -80,7 +80,7 @@ function MovieCard({
         movieId: id,
         title,
         imageUrl,
-        rating,
+        rating: publicRating,
         language,
         timestamp: serverTimestamp(),
       });
@@ -89,52 +89,76 @@ function MovieCard({
   };
 
   return (
-    <div
-      className={`${width} shrink-0 hover:scale-105 transition-transform duration-200`}
-    >
-      <Link to={isTV ? `/tv/${id}` : `/movie/${id}`}>
-        <img
-          src={imageUrl || "https://via.placeholder.com/300x450?text=No+Image"}
-          alt={title}
-          className="rounded-md w-full object-cover"
-        />
-      </Link>
-      <div className="mt-2">
-        <h3 className="text-sm font-semibold line-clamp-1">{title}</h3>
+    <div className={`${width} shrink-0`}>
+      <div className="relative bg-black rounded-md transition-transform duration-200 hover:scale-105 group">
+        <div className="relative">
+          <Link to={isTV ? `/tv/${id}` : `/movie/${id}`}>
+            <img
+              src={imageUrl || "https://via.placeholder.com/300x450?text=No+Image"}
+              alt={title}
+              className="rounded-md w-full object-cover"
+            />
+          </Link>
 
-        {uncleScore ? (
-          <p className="text-xs text-green-400">🎯 Uncle Score: {uncleScore}</p>
-        ) : (
-          <p className="text-xs text-gray-400">Loading score...</p>
-        )}
-        {language ? (
-  <p className="text-xs text-gray-400">🌐 {languageMap[language] || language?.toUpperCase() || "Unknown"}</p>
-) : (
-  <p className="text-xs text-red-400">🌐 N/A</p>
-)}
-        {genres.length > 0 && (
-          <p className="text-xs text-gray-400 truncate">
-            {genres.slice(0, 2).join(", ")}
+          {/* Bottom-Right Floating Add Button */}
+          <button
+            onClick={showRemoveButton ? onRemove : toggleSave}
+            className={`absolute bottom-2 right-2 px-2 py-1 rounded-full text-xs backdrop-blur-sm bg-black/60 hover:bg-black/80 shadow-lg z-20 ${
+              showRemoveButton
+                ? "text-red-400 hover:text-red-500"
+                : isSaved
+                ? "text-green-400 hover:text-green-500"
+                : "text-blue-400 hover:text-blue-500"
+            }`}
+          >
+            {showRemoveButton ? "✖" : isSaved ? "✔ Saved" : "➕ Add"}
+          </button>
+        </div>
+
+        <div className="mt-2 text-xs text-white space-y-1 px-0.5 pb-1">
+          <h3 className="text-sm font-semibold line-clamp-1">{title}</h3>
+
+          {showUncleScore && (
+            uncleScore !== null ? (
+              <p className="text-green-400">🎯 Uncle Score: {uncleScore}</p>
+            ) : (
+              <p className="text-gray-400">Loading score…</p>
+            )
+          )}
+
+          <p className="text-gray-400">
+            🌐 {languageMap[language] || language?.toUpperCase() || "N/A"}
           </p>
-        )}
 
-        {!showRemoveButton ? (
-          <button
-            className={`mt-1 text-xs ${
-              isSaved ? "text-green-500" : "text-blue-400"
-            } hover:underline`}
-            onClick={handleSave}
-          >
-            {isSaved ? "✔ Saved" : "➕ Add"}
-          </button>
-        ) : (
-          <button
-            className="mt-1 text-xs text-red-500 hover:underline"
-            onClick={onRemove}
-          >
-            ✖ Remove
-          </button>
-        )}
+          {onRate && (
+            <div className="flex gap-0.5 items-center text-yellow-400">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <span
+                  key={star}
+                  onClick={() => onRate(star)}
+                  className={`cursor-pointer ${
+                    userRating && star <= Math.round(userRating)
+                      ? "text-yellow-400"
+                      : "text-gray-600"
+                  }`}
+                >
+                  ★
+                </span>
+              ))}
+              {userRating && (
+                <span className="text-gray-400 ml-1">
+                  ({userRating.toFixed(1)})
+                </span>
+              )}
+            </div>
+          )}
+
+          {genres.length > 0 && (
+            <p className="text-gray-400 truncate">
+              {genres.slice(0, 2).join(", ")}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

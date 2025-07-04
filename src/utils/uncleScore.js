@@ -1,13 +1,12 @@
-export const calculateUncleScore = (tmdb, imdb, rtPercent) => {
-  const tmdbScore = parseFloat(tmdb) || 0;
-  const imdbScore = parseFloat(imdb) || 0;
-  const rtScore = parseInt(rtPercent?.replace("%", "")) / 10 || 0;
+export function calculateUncleScore(tmdb, imdb, rt) {
+  const tmdbScore = Number(tmdb) * 10 || 0;
+  const imdbScore = Number(imdb) * 10 || 0;
+  const rtScore = rt?.endsWith('%') ? Number(rt.replace('%', '')) : 0;
 
-  const uncleScore = (
-    (tmdbScore * 0.4) +
-    (imdbScore * 0.4) +
-    (rtScore * 0.2)
-  ).toFixed(1);
+  const validScores = [tmdbScore, imdbScore, rtScore].filter(n => n > 0);
+  if (validScores.length === 0) return null;
 
-  return uncleScore;
-};
+  const average = validScores.reduce((a, b) => a + b, 0) / validScores.length;
+  return Math.round(average) / 10; // 8.4
+ // Uncle score is out of 10
+}

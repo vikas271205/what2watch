@@ -6,10 +6,10 @@ import {
   getDocs,
   deleteDoc,
   doc,
+  setDoc,
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import MovieCard from "../components/MovieCard";
-import { Languages } from "lucide-react";
 
 function Watchlist() {
   const [watchlist, setWatchlist] = useState([]);
@@ -28,23 +28,32 @@ function Watchlist() {
       setLoading(true);
       const q = query(collection(db, "watchlists"), where("userId", "==", user.uid));
       const snapshot = await getDocs(q);
+
+      const ratingsSnapshot = await getDocs(
+        query(collection(db, "ratings"), where("userId", "==", user.uid))
+      );
+      const ratingMap = {};
+      ratingsSnapshot.forEach((doc) => {
+        const r = doc.data();
+        ratingMap[r.movieId] = r.rating;
+      });
+
       const data = snapshot.docs.map((doc) => {
         const movie = doc.data();
         return {
           id: movie.movieId,
           title: movie.title,
           imageUrl: movie.imageUrl,
-          rating: parseFloat(movie.rating),
+          publicRating: movie.rating,
+          userRating: ratingMap[movie.movieId],
           timestamp: movie.timestamp?.toDate(),
           docId: doc.id,
           genre: movie.genre || "Unknown",
-          language: movie.language || "Unknown",
-
+          language: movie.language || "en",
         };
       });
 
       setWatchlist(data);
-
       const genreSet = new Set(data.map((m) => m.genre || "Unknown"));
       setGenres(["All", ...Array.from(genreSet)]);
       setLoading(false);
@@ -58,13 +67,32 @@ function Watchlist() {
     setWatchlist((prev) => prev.filter((m) => m.docId !== docId));
   };
 
+  const handleRate = async (movie, newRating) => {
+    if (!user) return;
+    const docKey = `${user.uid}_${movie.id}`;
+    await setDoc(doc(db, "ratings", docKey), {
+      userId: user.uid,
+      movieId: movie.id,
+      title: movie.title,
+      imageUrl: movie.imageUrl,
+      rating: newRating,
+      language: movie.language,
+    });
+
+    setWatchlist((prev) =>
+      prev.map((m) =>
+        m.id === movie.id ? { ...m, userRating: newRating } : m
+      )
+    );
+  };
+
   const filtered = watchlist
     .filter((m) =>
       m.title.toLowerCase().includes(searchTerm.trim().toLowerCase())
     )
     .filter((m) => selectedGenre === "All" || m.genre === selectedGenre)
     .sort((a, b) => {
-      if (sortBy === "rating") return b.rating - a.rating;
+      if (sortBy === "rating") return (b.userRating || 0) - (a.userRating || 0);
       if (sortBy === "title") return a.title.localeCompare(b.title);
       return b.timestamp - a.timestamp;
     });
@@ -126,10 +154,12 @@ function Watchlist() {
                 id={movie.id}
                 title={movie.title}
                 imageUrl={movie.imageUrl}
-                rating={movie.rating}
+                publicRating={movie.publicRating}
+                userRating={movie.userRating}
                 showRemoveButton={true}
-                onRemove={() => handleRemove(movie.docId)}
                 language={movie.language}
+                onRemove={() => handleRemove(movie.docId)}
+                onRate={(star) => handleRate(movie, star)}
               />
               <p className="text-xs text-gray-400 mt-1">
                 Added: {movie.timestamp?.toLocaleDateString() || "N/A"}

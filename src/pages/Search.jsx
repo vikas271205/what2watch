@@ -210,7 +210,7 @@ function Search() {
               id={movie.id}
               title={movie.title}
               imageUrl={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
-              rating={movie.vote_average?.toFixed(1)}
+              publicRating={movie.vote_average?.toFixed(1)}
               genres={movie.genre_ids?.map((id) => id.toString())}
             />
           ))

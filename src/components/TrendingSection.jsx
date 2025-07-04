@@ -1,103 +1,109 @@
-import { useEffect, useRef, useState } from "react";
-import MovieCard from "../components/MovieCard";
+import { useEffect, useState, useRef } from "react";
+import MovieCard from "./MovieCard";
 
 const TMDB_API_KEY = "2130c722b019ea8fbd7f0e8aceac0704";
 
 function TrendingSection() {
   const [movies, setMovies] = useState([]);
   const [genreMap, setGenreMap] = useState({});
-  const scrollRef = useRef(null);
-  const scrollIntervalRef = useRef(null);
+  const scrollRef = useRef();
 
   useEffect(() => {
     const fetchGenres = async () => {
       const res = await fetch(
-        `https://api.themoviedb.org/3/genre/movie/list?api_key=${TMDB_API_KEY}`
+        `https://api.themoviedb.org/3/genre/movie/list?api_key=${TMDB_API_KEY}&language=en-US`
       );
       const data = await res.json();
       const map = {};
-      (data.genres || []).forEach((g) => {
+      data.genres.forEach((g) => {
         map[g.id] = g.name;
       });
       setGenreMap(map);
     };
 
-    const fetchTrending = async () => {
-      const res = await fetch(
-        `https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_API_KEY}`
-      );
-      const data = await res.json();
-      setMovies(data.results || []);
-    };
-
     fetchGenres();
-    fetchTrending();
   }, []);
 
   useEffect(() => {
-    const container = scrollRef.current;
-    if (!container || movies.length === 0) return;
+    const fetchTrending = async () => {
+      const res = await fetch(
+        `https://api.themoviedb.org/3/trending/movie/week?api_key=${TMDB_API_KEY}`
+      );
+      const data = await res.json();
 
-    const scroll = () => {
-      container.scrollLeft += 0.5;
-      if (container.scrollLeft >= container.scrollWidth / 2) {
-        container.scrollLeft = 0;
-      }
-      scrollIntervalRef.current = requestAnimationFrame(scroll);
+      const shuffled = data.results
+        .filter((m) => m.poster_path)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 15);
+
+      const moviesWithGenres = shuffled.map((movie) => ({
+        id: movie.id,
+        title: movie.title,
+        imageUrl: `https://image.tmdb.org/t/p/w300${movie.poster_path}`,
+        publicRating: movie.vote_average,
+        language: movie.original_language,
+        genres: movie.genre_ids.map((id) => genreMap[id]).filter(Boolean),
+      }));
+
+      setMovies(moviesWithGenres);
     };
 
-    scrollIntervalRef.current = requestAnimationFrame(scroll);
+    if (Object.keys(genreMap).length > 0) {
+      fetchTrending();
+    }
+  }, [genreMap]);
 
-    return () => cancelAnimationFrame(scrollIntervalRef.current);
-  }, [movies]);
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
 
-  const pauseScroll = () => cancelAnimationFrame(scrollIntervalRef.current);
+    let animationId;
 
-  const resumeScroll = () => {
-    scrollIntervalRef.current = requestAnimationFrame(function scroll() {
-      const container = scrollRef.current;
-      if (!container) return;
-      container.scrollLeft += 0.5;
+    const scroll = () => {
       if (container.scrollLeft >= container.scrollWidth / 2) {
         container.scrollLeft = 0;
+      } else {
+        container.scrollLeft += 1.0;
       }
-      scrollIntervalRef.current = requestAnimationFrame(scroll);
-    });
-  };
+      animationId = requestAnimationFrame(scroll);
+    };
 
-  const scrollMovies = [...movies, ...movies]; // duplicate for infinite scroll loop
+    const pause = () => cancelAnimationFrame(animationId);
+    const resume = () => scroll();
+
+    container.addEventListener("mouseenter", pause);
+    container.addEventListener("mouseleave", resume);
+
+    scroll();
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      container.removeEventListener("mouseenter", pause);
+      container.removeEventListener("mouseleave", resume);
+    };
+  }, [movies]);
 
   return (
-    <section className="px-6 py-10">
-      <h2 className="text-3xl font-bold mb-6 text-white">🔥 Trending Now</h2>
+    <div className="mb-10">
+      <h2 className="text-2xl font-bold mb-4">🔥 Trending Movies This Week</h2>
       <div
         ref={scrollRef}
-        className="flex gap-6 overflow-hidden w-full no-scrollbar"
-        onMouseEnter={pauseScroll}
-        onMouseLeave={resumeScroll}
+        className="flex gap-4 overflow-x-auto no-scrollbar pb-2"
       >
-        {scrollMovies.map((movie, index) => (
+        {[...movies, ...movies].map((movie, index) => (
           <MovieCard
             key={`${movie.id}_${index}`}
             id={movie.id}
             title={movie.title}
-            imageUrl={
-              movie.poster_path
-                ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
-                : "/fallback.png"
-            }
-            rating={movie.vote_average?.toFixed(1) || "N/A"}
-            genres={
-              movie.genre_ids
-                ?.map((id) => genreMap[id])
-                .filter((name) => Boolean(name)) || []
-            }
-            size="large"
-            language={movie.original_language}
+            imageUrl={movie.imageUrl}
+            publicRating={movie.publicRating}
+            language={movie.language}
+            genres={movie.genres}
+            size="small"
           />
         ))}
       </div>
-    </section>
+    </div>
   );
 }
 
