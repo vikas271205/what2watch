@@ -13,6 +13,7 @@ import TVShows from "./pages/TVShows";
 import Recommended from "./pages/Recommended";
 import Genres from "./pages/Genres";
 import CastDetail from "./pages/CastDetail";
+import Trending from "./pages/Trending";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -51,6 +52,7 @@ function App() {
         <Route path="/watchlist" element={<Watchlist />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/person/:id" element={<CastDetail />} />
+        <Route path="/trending" element={<Trending />} />
       </Routes>
     </>
   );

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { auth, db } from "../firebase";
 import {
   collection,
@@ -12,14 +13,29 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import MovieCard from "../components/MovieCard";
+import genreMap from "../utils/GenreMap";
 
 const TMDB_API_KEY = "2130c722b019ea8fbd7f0e8aceac0704";
 
 function Search() {
-  const [queryText, setQueryText] = useState("");
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const initialQuery = params.get("q") || "";
+
+  const [queryText, setQueryText] = useState(initialQuery);
   const [results, setResults] = useState([]);
   const [history, setHistory] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [isListening, setIsListening] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
+  const recognitionRef = useRef(null);
   const user = auth.currentUser;
+
+  useEffect(() => {
+    if (initialQuery.trim()) {
+      searchTMDB(initialQuery);
+    }
+  }, [initialQuery]);
 
   useEffect(() => {
     if (!user) return;
@@ -63,12 +79,37 @@ function Search() {
     }
   }, [queryText]);
 
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (queryText.trim().length === 0 || !inputFocused) {
+        setSuggestions([]);
+        return;
+      }
+
+      const res = await fetch(
+        `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${queryText}`
+      );
+      const data = await res.json();
+      const movieTvSuggestions = (data.results || []).filter(
+        (item) =>
+          (item.media_type === "movie" || item.media_type === "tv") &&
+          (item.title || item.name)
+      );
+      setSuggestions(movieTvSuggestions);
+    };
+
+    const timeout = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(timeout);
+  }, [queryText, inputFocused]);
+
   const searchTMDB = async (term) => {
     const res = await fetch(
-      `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${term}&include_adult=false`
+      `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${term}&include_adult=false`
     );
     const data = await res.json();
-    const filtered = (data.results || []).filter((m) => m.adult === false);
+    const filtered = (data.results || []).filter(
+      (m) => (m.media_type === "movie" || m.media_type === "tv") && !m.adult
+    );
     setResults(filtered);
   };
 
@@ -127,29 +168,83 @@ function Search() {
     setQueryText("");
   };
 
+  const toggleListening = () => {
+    if (!("webkitSpeechRecognition" in window)) {
+      alert("Voice search not supported");
+      return;
+    }
+
+    if (!recognitionRef.current) {
+      const recognition = new window.webkitSpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
+
+      recognition.onresult = async (event) => {
+        const transcript = event.results[0][0].transcript;
+        setQueryText(transcript);
+        await searchTMDB(transcript);
+      };
+
+      recognitionRef.current = recognition;
+    }
+
+    recognitionRef.current.start();
+  };
+
   return (
     <div className="px-4 py-10 sm:px-6 lg:px-10 max-w-6xl mx-auto text-white">
       <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-center sm:text-left">
-        🔍 Search Movies
+        🔍 Search Movies & TV Shows
       </h2>
 
       <form
         onSubmit={handleSearch}
-        className="flex flex-col sm:flex-row items-center gap-4 mb-8"
+        className="flex flex-col sm:flex-row items-center gap-4 mb-4 relative"
       >
         <input
           type="text"
-          placeholder="Search for a movie..."
+          placeholder="Search for a movie or TV show..."
           value={queryText}
           onChange={(e) => setQueryText(e.target.value)}
+          onFocus={() => setInputFocused(true)}
+          onBlur={() => setTimeout(() => setInputFocused(false), 200)}
           className="w-full sm:flex-1 px-4 py-3 rounded-xl border border-gray-500 bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <button
-          type="submit"
-          className="px-6 py-3 w-full sm:w-auto rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition"
-        >
-          Search
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button
+            type="submit"
+            className="px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition w-full sm:w-auto"
+          >
+            Search
+          </button>
+          <button
+            type="button"
+            onClick={toggleListening}
+            className={`px-4 py-3 rounded-xl transition font-bold border border-white text-white ${isListening ? "bg-red-600 animate-pulse" : "bg-gray-700 hover:bg-gray-600"}`}
+          >
+            🎤
+          </button>
+        </div>
+        {suggestions.length > 0 && queryText.trim().length > 0 && inputFocused && (
+          <ul className="absolute top-full mt-2 w-full bg-zinc-800 border border-gray-600 rounded-lg shadow-lg z-10 max-h-56 overflow-y-auto">
+            {suggestions.map((sug) => (
+              <li
+                key={sug.id}
+                className="px-4 py-2 hover:bg-zinc-700 cursor-pointer"
+                onMouseDown={() => {
+                  setQueryText(sug.title || sug.name);
+                  searchTMDB(sug.title || sug.name);
+                }}
+              >
+                {sug.title || sug.name}
+              </li>
+            ))}
+          </ul>
+        )}
       </form>
 
       {history.length > 0 && (
@@ -202,16 +297,18 @@ function Search() {
 
       <div className="flex flex-wrap gap-4">
         {results.length === 0 ? (
-          <p className="text-gray-400">No movies found.</p>
+          <p className="text-gray-400">No results found.</p>
         ) : (
-          results.map((movie) => (
+          results.map((item) => (
             <MovieCard
-              key={movie.id}
-              id={movie.id}
-              title={movie.title}
-              imageUrl={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
-              publicRating={movie.vote_average?.toFixed(1)}
-              genres={movie.genre_ids?.map((id) => id.toString())}
+              key={item.id}
+              id={item.id}
+              title={item.title || item.name}
+              imageUrl={`https://image.tmdb.org/t/p/w300${item.poster_path}`}
+              publicRating={item.vote_average?.toFixed(1)}
+              genres={item.genre_ids?.map((id) => genreMap[id] || "")}
+              isTV={item.media_type === "tv"}
+              language={item.original_language}
             />
           ))
         )}

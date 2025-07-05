@@ -77,7 +77,8 @@ function Trending() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 sm:px-6 md:px-10 py-6">
+    <div className="min-h-screen bg-white text-black dark:bg-zinc-900 dark:text-white px-4 sm:px-6 md:px-10 py-6">
+
       <h1 className="text-3xl font-bold mb-4">🔥 Trending Content</h1>
 
       <div className="flex gap-2 mb-6">

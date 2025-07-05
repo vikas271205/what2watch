@@ -7,11 +7,16 @@ import TVSection from "../components/TVSection";
 import RecommendedSection from "../components/RecommendedSection";
 import HollywoodSection from "../components/HollywoodSection";
 import BollywoodSection from "../components/BollywoodSection";
-
+import HeroSection from "../components/HeroSection";
+import Hero from "../components/Hero";
 function Home() {
   return (
     <main className="bg-white text-black dark:bg-zinc-900 dark:text-white">
+      
 
+  {/* Your existing sections: Trending, TV Shows, etc. */}
+
+<Hero/>
       {/* <section className="px-4 sm:px-6 md:px-10 py-6">
         <TodayPick />
       </section> */}
