@@ -58,7 +58,8 @@ function Genres() {
   }, [selectedGenre]);
 
   return (
-    <main className="bg-black text-white px-4 sm:px-6 md:px-10 py-8 min-h-screen">
+    <main className="bg-white text-black dark:bg-zinc-900 dark:text-white">
+
       <h1 className="text-3xl font-bold mb-6">🎭 Browse by Genre</h1>
 
       {/* Genre Selection Buttons */}

@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { Menu, X } from "lucide-react";
+import useDarkMode from "../utils/useDarkMode";
+import { Moon,Sun} from "lucide-react";
 
 function Navbar() {
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const auth = getAuth();
+  const [darkMode,setDarkMode]=useDarkMode();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u));
@@ -56,6 +59,13 @@ function Navbar() {
                   <span>{user.email?.charAt(0).toUpperCase() || "U"}</span>
                 </div>
               </Link>
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className="text-white hover:opacity-80"
+                aria-label="Toggle Dark Mode"
+              >
+                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
 
               {/* logout */}
               <button
@@ -92,6 +102,13 @@ function Navbar() {
                   <span>{user.email?.charAt(0).toUpperCase() || "U"}</span>
                 </div>
               </Link>
+              <button
+  onClick={() => setDarkMode(!darkMode)}
+  className="text-white hover:opacity-80"
+  aria-label="Toggle Dark Mode"
+>
+  {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+</button>
 
               <button
                 onClick={() => {

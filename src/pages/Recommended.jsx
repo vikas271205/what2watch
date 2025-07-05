@@ -9,7 +9,6 @@ function Recommended() {
   const [recommended, setRecommended] = useState([]);
   const [genreList, setGenreList] = useState({});
 
-  // Fetch genres first
   useEffect(() => {
     const fetchGenres = async () => {
       const res = await fetch(
@@ -24,7 +23,6 @@ function Recommended() {
     fetchGenres();
   }, []);
 
-  // Fetch movies + uncleScore
   useEffect(() => {
     const fetchData = async () => {
       const res = await fetch(
@@ -72,7 +70,7 @@ function Recommended() {
   }, [genreList]);
 
   return (
-    <div className="px-4 py-10 sm:px-6 lg:px-10 max-w-6xl mx-auto text-white">
+    <div className="px-4 py-10 sm:px-6 lg:px-10 max-w-6xl mx-auto bg-white text-black dark:bg-zinc-900 dark:text-white transition-colors duration-300">
       <h2 className="text-3xl font-bold mb-6 text-center sm:text-left">🎯 Recommended</h2>
       <div className="flex gap-4 overflow-x-auto pb-2">
         {recommended.map((item) => (

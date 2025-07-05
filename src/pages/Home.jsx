@@ -10,7 +10,8 @@ import BollywoodSection from "../components/BollywoodSection";
 
 function Home() {
   return (
-    <main className="text-white bg-black">
+    <main className="bg-white text-black dark:bg-zinc-900 dark:text-white">
+
       {/* <section className="px-4 sm:px-6 md:px-10 py-6">
         <TodayPick />
       </section> */}

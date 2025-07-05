@@ -1,4 +1,3 @@
-// src/pages/TVShows.jsx
 import { useEffect, useState } from "react";
 import MovieCard from "../components/MovieCard";
 
@@ -48,7 +47,7 @@ function TVShows() {
   }, [selectedGenre]);
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 sm:px-6 md:px-10 py-6">
+    <div className="min-h-screen px-4 sm:px-6 md:px-10 py-6 bg-white text-black dark:bg-zinc-900 dark:text-white transition-colors duration-300">
       <h1 className="text-2xl font-bold mb-6">📺 Popular TV Shows by Genre</h1>
 
       {/* Genre Filters */}
@@ -57,9 +56,11 @@ function TVShows() {
           <button
             key={genre.id}
             onClick={() => setSelectedGenre(genre)}
-            className={`px-4 py-2 rounded ${
-              selectedGenre?.id === genre.id ? "bg-blue-600" : "bg-gray-800"
-            } hover:bg-blue-700 transition`}
+            className={`px-4 py-2 rounded transition text-white ${
+              selectedGenre?.id === genre.id
+                ? "bg-blue-600 hover:bg-blue-700"
+                : "bg-gray-800 hover:bg-gray-700"
+            }`}
           >
             {genre.name}
           </button>
@@ -67,9 +68,9 @@ function TVShows() {
       </div>
 
       {loading ? (
-        <p className="text-gray-400">Loading TV shows...</p>
+        <p className="text-gray-500 dark:text-gray-300">Loading TV shows...</p>
       ) : tvShows.length === 0 ? (
-        <p className="text-gray-500">No TV shows found.</p>
+        <p className="text-gray-500 dark:text-gray-300">No TV shows found.</p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {tvShows.map((tv) => (
@@ -79,7 +80,7 @@ function TVShows() {
               title={tv.name}
               imageUrl={`https://image.tmdb.org/t/p/w300${tv.poster_path}`}
               publicRating={tv.vote_average}
-              genres={[]} // TV genre names not directly available in this response
+              genres={[]}
               isTV={true}
               language={tv.original_language}
             />
