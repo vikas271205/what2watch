@@ -1,19 +1,24 @@
-const OMDB_API_KEY = "2fc36b79"; // Replace with your OMDb API key
+const OMDB_API_KEY = "2fc36b79"; // Your OMDb API key
 
-export const fetchOMDbData = async (title, year = null) => {
+export const fetchOMDbData = async (title, year) => {
   if (!title) return null;
 
   const query = encodeURIComponent(title);
   let url = `https://www.omdbapi.com/?apikey=${OMDB_API_KEY}&t=${query}`;
-  if (year) url += `&y=${year}`;
+
+  // Only add year if it's truthy (not null or undefined)
+  if (year) {
+    url += `&y=${year}`;
+  }
 
   try {
     const res = await fetch(url);
     const data = await res.json();
+
     if (data.Response === "True") {
       return data;
     } else {
-      console.warn("OMDb: No data found for", title, year);
+      console.warn("OMDb: No data found for", title, year || "no year");
       return null;
     }
   } catch (error) {

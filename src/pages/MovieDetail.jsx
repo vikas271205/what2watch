@@ -15,7 +15,78 @@ import { fetchOMDbData } from "../api/omdb";
 import { db } from "../firebase";
 import { auth } from "../firebase";
 
+
+
 const TMDB_API_KEY = "2130c722b019ea8fbd7f0e8aceac0704";
+const API_KEY = "v9EUGO2MNvQWUcPLPxEFwpZwuPx6xPB2k8wfvdLQ";
+
+const getWatchmodeStreamingSources = async (title, releaseYear) => {
+  try {
+    const searchUrl =
+      `https://api.watchmode.com/v1/search/?` +
+      `apiKey=v9EUGO2MNvQWUcPLPxEFwpZwuPx6xPB2k8wfvdLQ` +
+      `&search_field=name` +
+      `&search_value=${encodeURIComponent(title)}` +
+      `&search_type=movie`;
+
+    const searchRes = await fetch(searchUrl);
+    if (!searchRes.ok) {
+      console.error("Watchmode Search Failed:", await searchRes.text());
+      return [];
+    }
+
+    const searchData = await searchRes.json();
+    const results = searchData.title_results || [];
+
+    const exact = results.find(
+      (r) =>
+        r.title &&
+        r.title.toLowerCase() === title.toLowerCase() &&
+        r.year?.toString() === releaseYear?.toString()
+    ) || results[0];
+
+    if (!exact) {
+      console.warn("No matching Watchmode result found for:", title);
+      return [];
+    }
+
+    const srcRes = await fetch(
+      `https://api.watchmode.com/v1/title/${exact.id}/sources/?apiKey=v9EUGO2MNvQWUcPLPxEFwpZwuPx6xPB2k8wfvdLQ`
+    );
+
+    if (!srcRes.ok) {
+      console.error("Watchmode Sources Failed:", await srcRes.text());
+      return [];
+    }
+
+    const sources = await srcRes.json();
+
+    const allowedPlatforms = [
+      "Netflix", "Amazon", "Disney+", "JioCinema", "Zee5",
+      "Hulu", "HBO Max", "Paramount+", "Peacock", "Hotstar", "SonyLIV",
+      "Apple TV+", "Crave", "Stan", "Now TV", "BBC iPlayer"
+    ];
+
+    const filtered = sources
+      .filter(
+        (s) =>
+          s.web_url &&
+          allowedPlatforms.includes(s.name)
+      )
+      .reduce((unique, curr) => {
+        if (!unique.find((item) => item.name === curr.name)) {
+          unique.push(curr);
+        }
+        return unique;
+      }, []);
+
+    return filtered;
+  } catch (err) {
+    console.error("Watchmode Fetch Error:", err);
+    return [];
+  }
+};
+
 
 function MovieDetail() {
   const { id } = useParams();
@@ -29,6 +100,8 @@ function MovieDetail() {
   const [allComments, setAllComments] = useState([]);
   const [omdbData, setOmdbData] = useState(null);
   const user = auth.currentUser;
+  const [platforms, setPlatforms] = useState([]);
+
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -37,10 +110,20 @@ function MovieDetail() {
       const res = await fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}`);
       const movieData = await res.json();
       setMovie(movieData);
+      const releaseYear = movieData.release_date?.slice(0, 4);
+const streaming = await getWatchmodeStreamingSources(movieData.title, releaseYear);
+console.log("✅ Streaming Platforms:", streaming);
+setPlatforms(streaming);
+
+
+
+
+      
 
       // Fetch OMDb data
       const omdb = await fetchOMDbData(movieData.title);
-      setOmdbData(omdb);
+      setOmdbData(omdb);     
+
 
       const trailerRes = await fetch(`https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_API_KEY}`);
       const trailerData = await trailerRes.json();
@@ -73,6 +156,7 @@ function MovieDetail() {
 
     fetchAll();
   }, [id, user]);
+  
 
   const toggleWatchlist = async () => {
     if (!user) return;
@@ -125,6 +209,7 @@ function MovieDetail() {
 
   if (!movie) return <p className="p-6 text-white">Loading...</p>;
 
+
   return (
     <div className="relative min-h-screen text-white bg-black">
       <div
@@ -155,6 +240,30 @@ function MovieDetail() {
                 )}
               </div>
             )}
+{platforms.length > 0 && (
+  <div className="mt-6">
+    <p className="font-semibold text-white text-base mb-2">📺 Available On:</p>
+    <div className="flex flex-wrap gap-2">
+      {platforms.map((p, i) => (
+        <a
+          key={i}
+          href={p.web_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-blue-700 text-white px-3 py-1.5 text-sm rounded-full hover:bg-blue-600 transition-all duration-200 shadow-sm"
+        >
+          {p.name}
+        </a>
+      ))}
+    </div>
+  </div>
+)}
+
+
+
+
+
+
 
             <p className="text-sm text-gray-200 mt-4 mb-6">{movie.overview}</p>
 
@@ -181,6 +290,7 @@ function MovieDetail() {
             )}
           </div>
         </div>
+        
 
         {trailerUrl && (
           <div className="mt-10">
@@ -202,18 +312,23 @@ function MovieDetail() {
           <div className="mt-10">
             <h2 className="text-xl font-semibold mb-4">👥 Cast</h2>
             <div className="flex gap-4 overflow-x-auto pb-2">
-              {cast.map((actor) => (
-                <div key={actor.id} className="min-w-[100px] shrink-0 text-center">
-                  <img
-                    src={actor.profile_path ? `https://image.tmdb.org/t/p/w185${actor.profile_path}` : "https://via.placeholder.com/185x278?text=No+Image"}
-                    alt={actor.name}
-                    className="rounded-md w-full mb-2"
-                  />
-                  <p className="text-sm font-medium">{actor.name}</p>
-                  <p className="text-xs text-gray-400">{actor.character}</p>
-                </div>
-              ))}
-            </div>
+  {cast.map((actor) => (
+    <a key={actor.id} href={`/person/${actor.id}`} className="min-w-[100px] text-center shrink-0">
+      <img
+        src={
+          actor.profile_path
+            ? `https://image.tmdb.org/t/p/w185${actor.profile_path}`
+            : "https://via.placeholder.com/185x278?text=No+Image"
+        }
+        alt={actor.name}
+        className="rounded-md w-full mb-2"
+      />
+      <p className="text-sm font-medium">{actor.name}</p>
+      <p className="text-xs text-gray-400">{actor.character}</p>
+    </a>
+  ))}
+</div>
+
           </div>
         )}
 

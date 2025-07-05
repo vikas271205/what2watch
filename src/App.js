@@ -12,6 +12,7 @@ import TVDetail from "./pages/TVDetail";
 import TVShows from "./pages/TVShows";
 import Recommended from "./pages/Recommended";
 import Genres from "./pages/Genres";
+import CastDetail from "./pages/CastDetail";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -49,6 +50,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/watchlist" element={<Watchlist />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/person/:id" element={<CastDetail />} />
       </Routes>
     </>
   );
